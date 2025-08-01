@@ -27,6 +27,8 @@ class BasicAsset
     float rotated_angle;
     glm::vec3 scale_vec;
     int reverse_normals;
+    /// @brief return model matrix which used in rastrization.
+    /// @return model matrix which used in rastrization.
     glm::mat4 model_mat();
     BasicAsset(glm::vec3 pos, glm::vec3 scale, float rotated_angle, glm::vec3 ori_front, int reverse_normal, float speed, float rotate_speed);
     virtual ~BasicAsset();
