@@ -10,17 +10,31 @@
 
 このプログラムはOpenGLライブラリを利用して作成される。シャドウをつける方法は[LearnOpenGL](https://learnopengl.com/Advanced-Lighting/Shadows/Point-Shadows)のサイトを見てください。
 
-# 简单的3D射击游戏
+## 開発環境
+* OS: Linux(Ubuntu 20.04)
+* プログラミング言語: C++
+* IDE: Visual Studio Code
+* 外部ライブラリ
+	* [OpenCV v4.5.5](https://opencv.org/)
+	* [GLFW(OpenGLライブラリのひとつ) v3.4](https://www.glfw.org/)
+	* [Glad](https://glad.dav1d.de/)
+    * [stb_image](https://github.com/nothings/stb)
+    * [assimp](https://github.com/assimp/assimp)
+    * [glm](https://github.com/g-truc/glm)
 
-![游戏画像](pics/tank_game.png)
+## コンパイルとリンク
+このプロジェクトはLinux環境で開発されたが、Windows環境でのコンパイルとリンクも可能です。
+### [cmake](https://cmake.org/)とmakeコマンドでプログラムを作成する(Linux利用者向け)
+cd ${path of the project} <br />cmake .  <br />make  以上のコマンドを実行すると、Linuxの実行ファイルが作成される。
 
-## 操作方法
+### Visual Studioでプログラムを作成する(Windows利用者向け)
+外部ライブラリのパスを指定すると、Visual Studioで[Windows実行ファイル](https://drive.google.com/drive/folders/1w9NHCNUg75JjbS4b-T0GRK2zdW4LRqgg)を作成することも可能です。
 
-按住向上的方向键坦克就会前进，按住向下的方向键坦克就会后退。按下左右方向键可以调整坦克的方向。按下空格键坦克就会发射子弹。击败全部敌人后，游戏就通关了。
+## 担当部分
+このプロジェクトフォルダのglad.cと3Dモデル以外のすべてのファイルの作成者は私です。
 
-## 添加阴影的方法
-
-该程序使用了OpenGL库。具体可以查看[LearnOpenGL](https://learnopengl.com/Advanced-Lighting/Shadows/Point-Shadows)网站。
+## 利用素材
+[Futuristic Trike (Version 2)](https://free3d.com/3d-model/futuristic-trike-verion-2-331974.html)
 
 ## Requirements
 
