@@ -2,12 +2,13 @@
 #define GAMELIB3D_H_
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <opencv4/opencv2/opencv.hpp>
+#include <opencv2/opencv.hpp>
 #include <iostream>
 #include "shader.hpp"
 #define UINT uint32_t
 #include <array>
 #include <chrono>
+
 namespace GameLib3D
 {
     /*image matrix based on OpenCV*/

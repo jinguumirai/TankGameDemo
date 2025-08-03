@@ -9,19 +9,19 @@ Play::Play(GameLib3D::Framework* fra_instance):
 PlayStatus(fra_instance), EPSILON(1e-5),
 tank(this, "resources/model/tank/export3dcoat.obj", 0, {0, -5, -2}, {0.01, 0.01, 0.01}, 1.0, 60.0f),
 simu_box(this, "resources/wood.png", 1, 0.0f, 0.0f, glm::vec3(0.0f), 
-glm::vec3(5.0f)), follow_tank_camera(&tank),
+glm::vec3(10.0f, 5.0f, 10.0f)), follow_tank_camera(&tank),
 shader("point_shadows.vs", "point_shadows.fs"), lightPos(0.0f, 0.0f, 0.0f),
 simpleDepthShader("point_shadows_depth.vs", "point_shadows_depth.fs", "point_shadows_depth.gs"),
 ui_object1(frame_instance, "resources/ui_star.png", 0),
-ui_object2(frame_instance, "resources/ui_star.png", 0),
+ui_object2(frame_instance, "resources/ui_star.png", 1),
 ui_object3(frame_instance, "resources/ui_star.png", 2)
 {
-    /*
-    boxes.push_back(ParamAsset("resources/wood.png", 0, 0.0f, 0.0f, 
+    
+    boxes.push_back(ParamAsset(this, "resources/wood.png", 0, 0.0f, 0.0f, 
     {-2.0f, -4.5f, -2.0f}, glm::vec3(0.5f)));
-    boxes.push_back(ParamAsset("resources/wood.png", 0, 0.0f, 0.0f, 
+    boxes.push_back(ParamAsset(this, "resources/wood.png", 0, 0.0f, 0.0f, 
     {2.0f, -4.5f, 2.0f}, glm::vec3(0.5f)));
-    */
+    
     ui_objects[0] = &ui_object1;
     ui_objects[1] = &ui_object2;
     ui_objects[2] = &ui_object3;
@@ -40,10 +40,14 @@ ui_object3(frame_instance, "resources/ui_star.png", 2)
     image_height_map[bullet_texture_name] = height;
     image_width_map[bullet_texture_name] = width;
     image_nrcomp_map[bullet_texture_name] = nrComponents;
-    enemy_tanks.push_back(ObjAsset(this, "resources/model/Tiger/Tiger_I.obj", 0, 
-        {3.0, -5.0, 3.0}, {0.2, 0.2, 0.2}, 1.0, 60.0f, 0.0f));
-    enemy_tanks.push_back(ObjAsset(this, "resources/model/Tiger/Tiger_I.obj", 0, 
-        {-3.0, -5.0, -3.0}, {0.2, 0.2, 0.2}, 1.0, 60.0f, 0.0f));
+    glm::vec3 pos_array[] = {{3.0, -5.0, 3.0}, {-3.0, -5.0, -3.0}, {-5.0, -5.0, -5.0},
+        {5.0, -5.0, 5.0}};
+    for (int i = 0; i < 4; i++)
+    {
+        enemy_tanks.push_back(ObjAsset(this, "resources/model/Tiger/Tiger_I.obj", 0, 
+            pos_array[i], {0.2, 0.2, 0.2}, 1.0, 60.0f, 0.0f));
+    }
+    
     glGenFramebuffers(1, &depthMapFBO);
     glGenTextures(1, &depthCubeMap);
 }
@@ -274,7 +278,11 @@ Base* Play::update(Base* another_status)
         {
             crash_flag = true;
             enemy_bullets.erase(enemy_bullet_iter);
-            return new Complete("resources/gameover.jpg", frame_instance);
+            tank.life--;
+            if (tank.life <= 0)
+            {
+                return new Complete("resources/gameover.jpg", frame_instance);
+            }
         }
         if (!crash_flag)
         {
@@ -354,7 +362,6 @@ bool Play::crash_objects(const BasicAsset* asset)
     {
         if (asset != &enemy_tanks[i] && is_crash(asset, &enemy_tanks[i]))
         {
-            std::cout << "tank" << std::endl;
             return true;
         }
     }

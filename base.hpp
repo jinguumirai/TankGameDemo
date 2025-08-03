@@ -10,8 +10,7 @@ public:
 public:
     Base(GameLib3D::Framework* const);
     virtual ~Base();
-    virtual Base * update(Base * const) = 0;
-    
+    virtual Base * update(Base * const) = 0;    
     virtual void draw() = 0;
 };
 #endif

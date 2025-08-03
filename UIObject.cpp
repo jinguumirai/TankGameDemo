@@ -7,14 +7,16 @@ ui_shader("ui.vs", "ui.fs")
     data = stbi_load(ui_image_path, &width, &height, &nrChannels, 0);
     if (data)
     {
-        float width_scale = width / framework->width() * 2;
-        float height_scale = height / framework->height() * 2;
+        float width_scale = (float)width / framework->width() * 2;
+        float height_scale = (float)height / framework->height() * 2;
         float height_start = 1.0 - height_scale;
+        
+        
         float ui_vertices[] = {
-            (index + 1) * width_scale - 1, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
-            (index + 1) * width_scale - 1, height_start, 1.0f, 0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
-            index * width_scale - 1, height_start, 1.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
-            index * width_scale - 1, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,   0.0f, 1.0f
+            (index + 1) * width_scale - 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 0.0f,   1.0f, 1.0f,
+            (index + 1) * width_scale - 1.0f, height_start, 0.0f, 0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+            index * width_scale - 1.0f, height_start, 0.0f, 0.0f, 0.0f, 1.0f,   0.0f, 0.0f,
+            index * width_scale - 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f,   0.0f, 1.0f
         };
         unsigned int ui_indices[] = {
             0, 1, 3, // first triangle
@@ -30,13 +32,17 @@ ui_shader("ui.vs", "ui.fs")
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, UIEBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ui_indices), ui_indices, GL_STATIC_DRAW);
-        glBindVertexArray(UIVAO);
 
-        glBindBuffer(GL_ARRAY_BUFFER, UIVBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(ui_vertices), ui_vertices, GL_STATIC_DRAW);
+        // position attribute
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+        // color attribute
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(1);
+        // texture coord attribute
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(2);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, UIEBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(ui_indices), ui_indices, GL_STATIC_DRAW);
         glGenTextures(1, &texture3);
         glBindTexture(GL_TEXTURE_2D, texture3); 
         // set the texture wrapping parameters
@@ -67,9 +73,9 @@ ui_shader("ui.vs", "ui.fs")
 
 void UIObject::draw()
 {
+    glDisable(GL_DEPTH_TEST);
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, texture3);
-    glDisable(GL_DEPTH_TEST);
     ui_shader.use();
     glBindVertexArray(UIVAO);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
