@@ -66,6 +66,8 @@ ParamAsset& ParamAsset::operator=(const ParamAsset& another)
     BasicAsset::reverse_normals = another.reverse_normals;
     BasicAsset::scale_vec = another.scale_vec;
     texture_path = another.texture_path;
+
+    // Generate texture and initialize it.
     glGenTextures(1, &texture);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
@@ -385,6 +387,7 @@ texture_path(texture_path)
     vecs[0].push_back({-1.f});
     vecs[0].push_back({1.0f});
 
+    // Set edge parameters.
     x_min = -1 * scale_vec.x;
     x_max = 1 * scale_vec.x; 
     y_max = 1 * scale_vec.y;
@@ -403,7 +406,6 @@ void ParamAsset::draw(Shader& shader)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-    
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -426,6 +428,8 @@ model(object_path), ai(play_instance->frame_instance)
     view_distance = 3.0;
     this->play_instance = play_instance;
     cool_down = 0.0f;
+
+    // Initialize edge parameters.
     x_max = -std::numeric_limits<float>::max();
     x_min = std::numeric_limits<float>::max();
     y_max = -std::numeric_limits<float>::max();
@@ -478,6 +482,7 @@ void ObjAsset::control_update(GameLib3D::Framework* frame_instance,
     {
         cool_down = 0;
     }
+    // When cool_down time is over, press space key and tank could shoot.
     if (cool_down <= 0.0f && once_key == GameLib3D::SPACE)
     {
         cool_down = 1.5f;
@@ -509,7 +514,10 @@ void ObjAsset::control_update(GameLib3D::Framework* frame_instance,
 
     if (continous_key == GameLib3D::LEFT)
     {
-        play_instance->tank.rotated_angle += (play_instance->tank.rotate_speed * delta_time);
+        play_instance->tank.rotated_angle += (play_instance->tank.rotate_speed * 
+            delta_time);
+        
+        // Keep rotated_angle between [0, 360]
         while (play_instance->tank.rotated_angle >= 360.0f)
         {
             play_instance->tank.rotated_angle -= 360.0f;
@@ -518,7 +526,10 @@ void ObjAsset::control_update(GameLib3D::Framework* frame_instance,
 
     if (continous_key == GameLib3D::RIGHT)
     {
-        play_instance->tank.rotated_angle -= (play_instance->tank.rotate_speed * delta_time);
+        play_instance->tank.rotated_angle -= (play_instance->tank.rotate_speed * 
+            delta_time);
+        
+        // Keep rotated_angle between [0, 360]
         while (play_instance->tank.rotated_angle < 0.0f)
         {
             play_instance->tank.rotated_angle += 360.0f;
@@ -530,6 +541,8 @@ void ObjAsset::auto_update(GameLib3D::Framework* frame_work)
 {
     double delta_time = frame_work->average_delta_time() / 1000;
     cool_down -= delta_time;
+
+    // When enemy tank could see tank, convert status to 'search'
     if (could_see(play_instance->tank))
     {
         ai.now_status = EnemyStatus::Search;
@@ -539,6 +552,8 @@ void ObjAsset::auto_update(GameLib3D::Framework* frame_work)
         double front_theta = std::atan2(front_vec3.x, front_vec3.z);
         double diff_theta = std::atan2(diff_vec.x, diff_vec.z);
         const double PI = M_PI;
+
+        // When tank is not in the front of the enemy tank, change enemy tank's rotated angle.
         if (abs(front_theta - diff_theta) > PI / 15)
         {
             if (front_theta > diff_theta)
@@ -566,6 +581,7 @@ void ObjAsset::auto_update(GameLib3D::Framework* frame_work)
         }
         else
         {
+            // When tank in the front of the enemy tank and cool down time over, shoot.
             if (cool_down <= 0.0f)
             {
                 play_instance->enemy_bullets.emplace_back(ParamAsset(play_instance, 
@@ -576,6 +592,8 @@ void ObjAsset::auto_update(GameLib3D::Framework* frame_work)
             }
             auto delta_vec = front_vec() * glm::vec3(delta_time * speed);
             pos_vec += delta_vec;
+
+            // Avoid crash.
             if (!play_instance->in_box(this) || play_instance->crash_objects(this))
             {
                 pos_vec -= delta_vec;
@@ -587,8 +605,10 @@ void ObjAsset::auto_update(GameLib3D::Framework* frame_work)
     {
         ai.now_status = EnemyStatus::Random;
     }
+
     if (ai.now_status == EnemyStatus::Random)
     {
+        // When now status is random, change ai random status.
         RandomMovement temp_random_move = ai.next_random_status();
         if (temp_random_move == RandomMovement::MoveForward)
         {
@@ -630,7 +650,9 @@ void ObjAsset::auto_update(GameLib3D::Framework* frame_work)
 bool ObjAsset::could_see(BasicAsset& asset)
 {
     double asset_distance = glm::distance(asset.pos_vec, pos_vec);
-    if (asset_distance < view_distance && glm::dot(pos_vec, asset.pos_vec) >= 0.0)
+
+    // When tank in the range of view distance and tank in the range of view angle, enemy tank could see tank.
+    if (asset_distance < view_distance && glm::dot(front_vec(), asset.pos_vec) >= 0.0)
     {
         return true;
     }

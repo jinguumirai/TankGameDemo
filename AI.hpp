@@ -26,6 +26,9 @@ public:
     double pre_time;
     GameLib3D::Framework* frame_instance;
     AI(GameLib3D::Framework* frame_work);
+
+    /// @brief Change the next status per second. 
+    /// @return Next random status. If delta time less than 1s, this result would not be changed.
     RandomMovement next_random_status();
 };
 

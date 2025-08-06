@@ -21,8 +21,21 @@ class Play: public PlayStatus
     UIObject* ui_objects[3];
     const float EPSILON;
     bool is_crash(const BasicAsset * asset1, const BasicAsset * asset2);
+
+    /// @brief Detect crash result between asset1 and any of the assets.
+    /// @param asset1 The pointer of asset1, this parameter must not be null.
+    /// @param assets The pointer of assets vector, this parameter must not be null.
+    /// @return If any crash happen between asset1 and any of the assets, return true. else return false.
     bool is_crash(const BasicAsset * asset1, const std::vector<ParamAsset>& assets);
+
+    /// @brief Detect crash result between asset and any of the boxes.
+    /// @param asset The pointer of asset, must not be empty.
+    /// @return If any crash happen between asset1 and any of the boxes, return true. else return false.
     bool crash_boxes(const BasicAsset* asset);
+
+    /// @brief Detect crash result between tank which is opreated by you and any of the boxes or any of enemy tanks.
+    /// @param asset The pointer of tank, must not be empty.
+    /// @return If any crash happen, return true, else return false.
     bool crash_objects(const BasicAsset* asset);
     std::vector<ParamAsset> bullets;
     std::vector<ParamAsset> enemy_bullets;

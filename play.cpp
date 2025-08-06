@@ -36,10 +36,12 @@ ui_object3(frame_instance, "resources/ui_star.png", 2)
     bullet_texture_name = "resources/enemy_bullet.jpg";
     bullet_data = stbi_load(bullet_texture_name.c_str(), 
         &width, &height, &nrComponents, 0);
+    // To accurate the process of loading image, store infomation of image to the image_data_map.
     image_data_map[bullet_texture_name] = bullet_data;
     image_height_map[bullet_texture_name] = height;
     image_width_map[bullet_texture_name] = width;
     image_nrcomp_map[bullet_texture_name] = nrComponents;
+
     glm::vec3 pos_array[] = {{3.0, -5.0, 3.0}, {-3.0, -5.0, -3.0}, {-5.0, -5.0, -5.0},
         {5.0, -5.0, 5.0}};
     for (int i = 0; i < 4; i++)
@@ -95,6 +97,8 @@ void Play::draw()
     glViewport(0, 0, frame_instance->width(), frame_instance->height());
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);
+
+    // To make shadow, simpleDepthShader will be used to get visiable information.
     simpleDepthShader.use();
     for (unsigned int i = 0; i < 6; ++i)
         simpleDepthShader.setMat4("shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
@@ -115,6 +119,8 @@ void Play::draw()
         enemy_tank.draw(simpleDepthShader);
     }
     tank.draw(simpleDepthShader);
+
+    // Draw objects by using normal shader.
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, frame_instance->width(), frame_instance->height());
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -126,7 +132,7 @@ void Play::draw()
     shader.setMat4("view", view);
     shader.setVec3("lightPos", lightPos);
     shader.setVec3("viewPos", {0.0f, 0.0f, 0.0f});
-    shader.setInt("shadows", true); // enable/disable shadows by pressing 'SPACE'
+    shader.setInt("shadows", true);
     shader.setFloat("far_plane", far_plane);
     glActiveTexture(GL_TEXTURE10);
     glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubeMap);
@@ -172,25 +178,38 @@ Play::~Play()
 Base* Play::update(Base* another_status)
 {
     GameLib3D::InputKey input_key = frame_instance->read_once_input();
+
+    // If you destory all enemy tanks, game clear.
     if (enemy_tanks.size() <= 0)
     {
         return new Complete("resources/congratulations.png", frame_instance);
     }
+
+    // You could press P key to pause game.
     if (input_key == GameLib3D::P)
     {
         return another_status;
     }
+
     tank.control_update(frame_instance, input_key);
+
+    // Get delta time between two frames whose unit is s.
     double delta_time = frame_instance->average_delta_time() / 1000;
+
+    // Update enemy tanks status.
     auto bullet_iter = bullets.begin();
     for (int i = 0; i < enemy_tanks.size(); i++)
     {
         enemy_tanks[i].auto_update(frame_instance);
     }
+
+    // Update bullet which shooted by tank.
     while (bullet_iter != bullets.end())
     {
         (*bullet_iter).pos_vec += ((*bullet_iter).front_vec() * glm::vec3(bullet_iter->speed) * 
         glm::vec3(delta_time));
+
+        // When bullet out of range, delete it.
         if (!in_box(&(*bullet_iter)))
         {
             bullet_iter = bullets.erase(bullet_iter);
@@ -200,11 +219,15 @@ Base* Play::update(Base* another_status)
             bullet_iter++;
         }
     }
+
+    // Update bullet which shooted by enemy tanks.
     auto enemy_bullet_iter = enemy_bullets.begin();
     while (enemy_bullet_iter != enemy_bullets.end())
     {
         (*enemy_bullet_iter).pos_vec += ((*enemy_bullet_iter).front_vec() * 
             glm::vec3(enemy_bullet_iter->speed * delta_time));
+
+        // When bullet out of range, delete it.
         if (!in_box(&(*enemy_bullet_iter)))
         {
             enemy_bullets.erase(enemy_bullet_iter);
@@ -214,6 +237,8 @@ Base* Play::update(Base* another_status)
             enemy_bullet_iter++;
         }
     }
+
+    // Process the crash between bullet and any of the boxes.
     bullet_iter = bullets.begin();
     while (bullet_iter != bullets.end())
     {
@@ -229,12 +254,15 @@ Base* Play::update(Base* another_status)
             }
             box_iter++;
         }
+
+        // When crash happen, the bullet iter would become the next bullet automatically.
         if (!crash_flag)
         {
             bullet_iter++;
         }
     }
     
+    // Process the crash between bullets which shooted by tank and any of enemy tanks.
     bullet_iter = bullets.begin();
     while (bullet_iter != bullets.end())
     {
@@ -249,16 +277,20 @@ Base* Play::update(Base* another_status)
                 crash_flag = true;
                 break;
             }
+            // When crash happen, the enemy iter would become the next enemy automatically.
             else
             {
                 enemy_iter++;
             }
         }
+        // When crash happen, the bullet iter would become the next bullet automatically.
         if (!crash_flag)
         {
             bullet_iter++;
         }
     }
+
+    // Process the crash between bullets which shooted by enemy tanks and tank which operated by player.
     enemy_bullet_iter = enemy_bullets.begin();
     while (enemy_bullet_iter != enemy_bullets.end())
     {
@@ -272,6 +304,7 @@ Base* Play::update(Base* another_status)
                 crash_flag = true;
                 break;
             }
+            // When crash happen, the box iter would become the next box automatically.
             box_iter++;
         }
         if (!crash_flag && is_crash(&(*enemy_bullet_iter), &tank))
@@ -279,11 +312,15 @@ Base* Play::update(Base* another_status)
             crash_flag = true;
             enemy_bullets.erase(enemy_bullet_iter);
             tank.life--;
+
+            // When tank life becomes zero, game over.
             if (tank.life <= 0)
             {
                 return new Complete("resources/gameover.jpg", frame_instance);
             }
         }
+
+        // When crash happen, the enemy bullet iter would become the next bullet automatically.
         if (!crash_flag)
         {
             enemy_bullet_iter++;
@@ -314,6 +351,8 @@ bool Play::is_crash(const BasicAsset * asset1, const BasicAsset * asset2)
 {
     auto edge1 = asset1->edge_vector();
     auto edge2 = asset2->edge_vector();
+
+    // EPSILON would be used to avoid floating-point precision error.
     if (edge1[1] <= edge2[0] + EPSILON && edge2[1] <= edge1[0] + EPSILON && edge1[3] <= edge2[2] + EPSILON && 
     edge2[3] <= edge1[2] + EPSILON && edge1[5] <= edge2[4] + EPSILON && edge2[5] <= edge1[4] + EPSILON)
     {

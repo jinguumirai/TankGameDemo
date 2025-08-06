@@ -460,6 +460,9 @@ void GameLib3D::Framework::draw()
 
 double GameLib3D::Framework::get_time()
 {
+    /**temp_time is current time whose unit is ms by this time, to get current
+     * time whose unit is s you must divide temp_time by 1000.
+     **/
     double temp_time = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()
     ).count();

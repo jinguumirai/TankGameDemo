@@ -54,8 +54,11 @@ int main()
     }
 
     GameLib3D::Framework* framework = GameLib3D::Framework::instance(SCR_WIDTH, SCR_HEIGHT, window);
+
+    // Enable alpha channel.
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     while (!glfwWindowShouldClose(window))
     {
         framework->update();
