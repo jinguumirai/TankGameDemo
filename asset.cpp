@@ -650,9 +650,10 @@ void ObjAsset::auto_update(GameLib3D::Framework* frame_work)
 bool ObjAsset::could_see(BasicAsset& asset)
 {
     double asset_distance = glm::distance(asset.pos_vec, pos_vec);
+    glm::vec3 diff_vec = asset.pos_vec - pos_vec;
 
     // When tank in the range of view distance and tank in the range of view angle, enemy tank could see tank.
-    if (asset_distance < view_distance && glm::dot(front_vec(), asset.pos_vec) >= 0.0)
+    if (asset_distance < view_distance && glm::dot(front_vec(), diff_vec) >= 0.0)
     {
         return true;
     }
