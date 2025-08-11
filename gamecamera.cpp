@@ -12,3 +12,15 @@ glm::mat4 FollowCamera::get_view()
     glm::vec3 pos_camera = follow_object->pos_vec - follow_object->front_vec() + glm::vec3({0.0f, 0.5f, 0.0f});
     return glm::lookAt(pos_camera, follow_object->pos_vec, {0, 1, 0});
 }
+
+UpCamera::UpCamera(const BasicAsset* origin_object):
+follow_object(origin_object)
+{
+    ;
+}
+
+glm::mat4 UpCamera::get_view()
+{
+    glm::vec3 pos_camera = follow_object->pos_vec + glm::vec3(0.0f, 3.0f, 0.0f);
+    return glm::lookAt(pos_camera, follow_object->pos_vec, {0.0f, 0.0f, 1.0f});
+}

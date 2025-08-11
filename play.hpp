@@ -11,10 +11,12 @@
 #include <unordered_map>
 #include <string>
 #include "UIObject.hpp"
+#include "NaviMap.hpp"
 
 class Play: public PlayStatus
 {
     public:
+    NaviMap navi_map;
     UIObject ui_object1;
     UIObject ui_object2;
     UIObject ui_object3;
@@ -55,9 +57,11 @@ class Play: public PlayStatus
     glm::vec3 lightPos;
     Play(GameLib3D::Framework * fra_instance);
     virtual ~Play();
-    void play_init();
+    virtual void play_init();
+    virtual void draw_navi();
     bool in_box(BasicAsset*);
     virtual void draw();
+    virtual void draw_scene(Shader&);
     virtual Base* update(Base* another_status);
 };
 #endif

@@ -14,7 +14,8 @@ shader("point_shadows.vs", "point_shadows.fs"), lightPos(0.0f, 0.0f, 0.0f),
 simpleDepthShader("point_shadows_depth.vs", "point_shadows_depth.fs", "point_shadows_depth.gs"),
 ui_object1(frame_instance, "resources/ui_star.png", 0),
 ui_object2(frame_instance, "resources/ui_star.png", 1),
-ui_object3(frame_instance, "resources/ui_star.png", 2)
+ui_object3(frame_instance, "resources/ui_star.png", 2),
+navi_map(&tank, 256, 256, frame_instance->height(), frame_instance->width())
 {
     
     boxes.push_back(ParamAsset(this, "resources/wood.png", 0, 0.0f, 0.0f, 
@@ -98,27 +99,13 @@ void Play::draw()
     glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
     glClear(GL_DEPTH_BUFFER_BIT);
 
-    // To make shadow, simpleDepthShader will be used to get visiable information.
+    // To create shadow, simpleDepthShader will be used to get visiable information.
     simpleDepthShader.use();
     for (unsigned int i = 0; i < 6; ++i)
         simpleDepthShader.setMat4("shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
     simpleDepthShader.setVec3("lightPos", lightPos);
     simpleDepthShader.setFloat("far_plane", far_plane);
-    simu_box.draw(simpleDepthShader);
-    for (auto& box : boxes)
-    {
-        box.draw(simpleDepthShader);
-    }
-    for (auto& bullet : bullets)
-    {
-        bullet.draw(simpleDepthShader);
-    }
-
-    for (auto& enemy_tank: enemy_tanks)
-    {
-        enemy_tank.draw(simpleDepthShader);
-    }
-    tank.draw(simpleDepthShader);
+    draw_scene(simpleDepthShader);
 
     // Draw objects by using normal shader.
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -136,30 +123,15 @@ void Play::draw()
     shader.setFloat("far_plane", far_plane);
     glActiveTexture(GL_TEXTURE10);
     glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubeMap);
-    simu_box.draw(shader);
-    for (auto& box: boxes)
-    {
-        box.draw(shader);
-    }
-    for (auto& bullet : bullets)
-    {
-        bullet.draw(shader);
-    }
-    for (auto& enemy_tank: enemy_tanks)
-    {
-        enemy_tank.draw(shader);
-    }
-    for (auto& enemy_bullet: enemy_bullets)
-    {
-        enemy_bullet.draw(shader);
-    }
-    tank.draw(shader);
+    draw_scene(shader);
     glActiveTexture(GL_TEXTURE10);
     glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
     for (int i = 0; i < tank.life; i++)
     {
         ui_objects[i]->draw();
     }
+    draw_navi();
 }
 
 Play::~Play()
@@ -405,4 +377,63 @@ bool Play::crash_objects(const BasicAsset* asset)
         }
     }
     return false;
+}
+
+void Play::draw_scene(Shader& shader)
+{
+    simu_box.draw(shader);
+    for (auto& box: boxes)
+    {
+        box.draw(shader);
+    }
+    for (auto& bullet : bullets)
+    {
+        bullet.draw(shader);
+    }
+    for (auto& enemy_tank: enemy_tanks)
+    {
+        enemy_tank.draw(shader);
+    }
+    for (auto& enemy_bullet: enemy_bullets)
+    {
+        enemy_bullet.draw(shader);
+    }
+    tank.draw(shader);
+}
+
+void Play::draw_navi()
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, navi_map.FBO);
+    glViewport(0, 0, navi_map.map_width, navi_map.map_height);
+    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    float orto = 3.0f;
+    glm::mat4 projection = glm::ortho(-orto, orto, -orto, orto, -3.0f, 3.0f);
+    glm::mat4 top_view = navi_map.up_camera.get_view();
+
+    navi_map.normal_shader.use();
+    navi_map.normal_shader.setMat4("projection", projection);
+    navi_map.normal_shader.setMat4("view", top_view);
+    navi_map.normal_shader.setInt("textureIndex", 0);
+
+    draw_scene(navi_map.normal_shader);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(frame_instance->width() - navi_map.map_width - 10, 
+    frame_instance->height() - navi_map.map_height - 10, navi_map.map_width,
+    navi_map.map_height);
+
+    glDisable(GL_DEPTH_TEST);
+
+    navi_map.map_shader.use();
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, navi_map.quad_texture);
+    navi_map.map_shader.setInt("screenTex", 0);
+    glBindVertexArray(navi_map.quadVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+    glEnable(GL_DEPTH_TEST);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, frame_instance->width(), frame_instance->height());
 }
